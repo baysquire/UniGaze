@@ -43,44 +43,67 @@ You can use UniGaze with the pip command:
 ```bash
 pip install unigaze
 ```
-
 You can find our UniGaze on the PyPI page: https://pypi.org/project/unigaze/
-
-## Installation from source
-
-To install the required dependencies, run:
-```bash
-pip install -r requirements.txt
-```
-
-
-## Pre-training (MAE)
-Please refer to [MAE Pre-Training](./MAE/README.md).
-
-
-## Training (Gaze Estimation)
-
-For detailed training instructions, please refer to [UniGaze Training](./unigaze/README.md).
-
----
-
-## Usage of UniGaze
 
 
 ### Available Models
 
-We provide the following trained models:
+<!-- We provide the following trained models:
 
 |   Filename   | Backbone |   Training Data   | Checkpoint |
 |--------------|----------|-------------------|------------|
 |`unigaze_b16_joint.pth.tar`  | UniGaze-B | *Joint Datasets* | [Download (Google Drive)](https://drive.google.com/file/d/1xdPbzAX8d3cPAMChFjRThryIWVp9Ng_f/view?usp=sharing) |
 |`unigaze_L16_joint.pth.tar`  | UniGaze-L | *Joint Datasets* | [Download (Google Drive)](https://drive.google.com/file/d/1JR20_iGTU8pSXtKIC-_swiSRImWLAbBC/view?usp=sharing) |
 |`unigaze_h14_joint.pth.tar`  | UniGaze-H | *Joint Datasets* | [Download (Google Drive)](https://drive.google.com/file/d/16z_Y8_yi53xTw_-5Pw9H4jjAOPebIFdA/view?usp=sharing) | 
-|`unigaze_h14_cross_X.pth.tar`| UniGaze-H |  ETH-XGaze       | [Download (Google Drive)](https://drive.google.com/file/d/1BVYGOK5NwXUPr63DnbYGeQ_yqlevv9VR/view?usp=sharing) |
+|`unigaze_h14_cross_X.pth.tar`| UniGaze-H |  ETH-XGaze       | [Download (Google Drive)](https://drive.google.com/file/d/1BVYGOK5NwXUPr63DnbYGeQ_yqlevv9VR/view?usp=sharing) | -->
+
+|   Model name   | Backbone |   Training Data   | 
+|----------------|----------|-------------------|
+|`unigaze_b16_joint`  | UniGaze-B | *Joint Datasets* | 
+|`unigaze_l16_joint`  | UniGaze-L | *Joint Datasets* | 
+|`unigaze_h14_joint`  | UniGaze-H | *Joint Datasets* | 
+|`unigaze_h14_cross_X`| UniGaze-H |  ETH-XGaze       | 
 
 
+```python
+import unigaze
+model = unigaze.load("unigaze_h14_joint", device="cuda")   # downloads weights from HF on first use
+```
+
+#### Predicting Gaze from Videos
+To predict gaze direction from videos, use the following script:
+
+```bash
+projdir=<...>/UniGaze/unigaze
+cd ${projdir}
+python predict_gaze_video.py \
+    --model_name "unigaze_h14_joint"  \
+    -i ./input_video 
+``` 
 
 
+## Installation from source
+If you want to re-implement the experiments, install the required dependencies, run:
+```bash
+# install PyTorch 
+pip install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cu118 
+pip install -r requirements.txt 
+
+## To align with the newer unigaze pip package, you can also try newer version
+pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+## numpy==2.0.2 and timm==1.0.9
+```
+
+## Pre-training (MAE)
+Please refer to [MAE Pre-Training](./MAE/README.md).
+
+## Training (Gaze Estimation)
+For detailed training instructions, please refer to [UniGaze Training](./unigaze/README.md).
+
+---
+
+
+<!-- 
 ### Loading Pretrained Models
 - You can refer to [load_gaze_model.ipynb](./unigaze/load_gaze_model.ipynb) for instructions on loading the model and integrating it into your own codebase.
   - If you want to load the MAE, use `custom_pretrained_path` arguments.
@@ -95,20 +118,7 @@ unigaze_h14_crossX = MAE_Gaze(model_type='vit_h_14') ## custom_pretrained_path d
 weight = torch.load('logs/unigaze_h14_cross_X.pth.tar', map_location='cpu')['model_state']
 unigaze_h14_crossX.load_state_dict(weight, strict=True)
 ```
-
-
-
-#### Predicting Gaze from Videos
-To predict gaze direction from videos, use the following script:
-
-```bash
-projdir=<...>/UniGaze/unigaze
-cd ${projdir}
-python predict_gaze_video.py \
-    --model_cfg_path configs/model/mae_b_16_gaze.yaml  \
-    -i ./input_video \
-    --ckpt_resume logs/unigaze_b16_joint.pth.tar
-``` 
+ -->
 
 
 ---

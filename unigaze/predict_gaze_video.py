@@ -1,41 +1,20 @@
 
-import argparse, glob, importlib, csv
-from omegaconf import DictConfig, OmegaConf
-import logging
-import os, sys
-from glob import glob
-import uuid
-from datetime import datetime
-import importlib
+import os, argparse
 import numpy as np
-import torch
-
-from utils import instantiate_from_cfg, save_files
-from utils.util import transform_date_str, set_seed
-
-import utils.misc as misc
-
-import time
+from glob import glob
 from tqdm import tqdm
+from datetime import datetime
+from omegaconf import OmegaConf
 import cv2
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from torchvision import datasets, transforms
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import pandas as pd
-import numpy as np
-
-from collections import defaultdict
-import face_alignment
 
 from gazelib.gaze.gaze_utils import pitchyaw_to_vector, vector_to_pitchyaw, angular_error
 from gazelib.gaze.normalize import estimateHeadPose, normalize
 from gazelib.label_transform import get_face_center_by_nose
 
-
+from utils import instantiate_from_cfg
+from datasets.helper.image_transform import wrap_transforms
+import face_alignment
 
 
 def draw_gaze(image_in, pitchyaw, thickness=8, color=(0, 0, 255)):
@@ -72,22 +51,8 @@ def draw_gaze(image_in, pitchyaw, thickness=8, color=(0, 0, 255)):
 			cv2.LINE_AA, tipLength=0.3
 		)
 
-	# ### Add a subtle glow at the tip of the arrow for extra 3D effect
-	# tip_color = (255, 255, 255)
-	# cv2.circle(image_out, end_point, int(thickness * 1.5), tip_color, -1, cv2.LINE_AA)
-
 	return image_out
 
-
-# def project3DGazeDirection(image, fc, gazeDirection, camera_matrix, camera_distortion, color = (255, 255, 255)):
-# 	gazeRay = np.concatenate((fc.reshape(1,3), (fc + gazeDirection * -112).reshape(1,3)), axis=0)
-# 	result = cv2.projectPoints( gazeRay, 
-# 							np.array([0,0,0]).reshape(3,1).astype(float),
-# 							np.array([0,0,0]).reshape(3,1).astype(float), 
-# 							camera_matrix, camera_distortion )
-# 	result = result[0].reshape(2,2)
-# 	image = cv2.arrowedLine(image, (int(result[0][0]), int(result[0][1])), (int(result[1][0]), int(result[1][1])), color, thickness=3)
-# 	return image
 
 
 
@@ -121,17 +86,16 @@ def get_parser(**parser_kwargs):
 	parser.add_argument(
 		"-i", "--input_dir", help="the path to the input: should be a video", 
 	)
-
-
-	parser.add_argument(
-		"-m", "--model_cfg_path", help="the path to the model config file",
-	)
-
-
 	parser.add_argument(
 		"-out", "--output_dir", help="the path to save the drawn images", 
 	)
-
+	parser.add_argument(
+		"-m", "--model_cfg_path", help="the path to the model config file",
+	)
+	
+	parser.add_argument(
+		"--model_name", help="the model name tag when loading directly from unigaze package", default=None, type=str,
+	)
 	parser.add_argument(
 		"--ckpt_resume", help="resume from checkpoint", default=None, type=str,
 	)
@@ -144,20 +108,8 @@ def get_parser(**parser_kwargs):
 		"--write_image", help="whether to write the images", default=False, type=str2bool,
 	)
 	
-	
 	return parser
 
-
-from datasets.helper.image_transform import wrap_transforms
-
-
-
-
-project_dir = os.path.dirname(os.path.abspath(__file__))
-
-
-input_resolution = 224
-output_resolution = 64
 
 
 
@@ -205,15 +157,19 @@ if __name__ == "__main__":
 
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+	if args.model_name is not None:
+		import unigaze
+		model = unigaze.load(args.model_name, device=device)
+		model.eval()
+	else:
+		pretrained_model_cfg=OmegaConf.load(args.model_cfg_path)['net_config']
+		pretrained_model_cfg.params.custom_pretrained_path = None  ## since we load the gaze trained checkpoint, this MAE pre-trained checkpoint is not needed
+		model = instantiate_from_cfg( pretrained_model_cfg )
+		load_checkpoint(model, 'model_state', args.ckpt_resume)
+		model.eval()
+		model.to(device)
 
-	pretrained_model_cfg=OmegaConf.load(args.model_cfg_path)['net_config']
-	pretrained_model_cfg.params.custom_pretrained_path = None  ## since we load the gaze trained checkpoint, this MAE pre-trained checkpoint is not needed
-	model = instantiate_from_cfg( pretrained_model_cfg )
-	load_checkpoint(model, 'model_state', args.ckpt_resume)
 	image_torch_transform = wrap_transforms('basic_imagenet', image_size=224)
-	model.eval()
-	model.to(device)
-
 	focal_norm = 960 # focal length of normalized camera
 	distance_norm = 600  # normalized distance between eye and camera
 	roi_size = (224, 224)  # size of cropped eye image
@@ -223,7 +179,6 @@ if __name__ == "__main__":
 		fa = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False)
 
 	resize_factor = 0.5
-
 
 	now_day = datetime.now().strftime("%Y-%m-%d")
 	now_time = datetime.now().strftime("%H-%M-%S")
