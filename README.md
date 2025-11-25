@@ -85,9 +85,8 @@ For detailed training instructions, please refer to [UniGaze Training](./unigaze
 
 
 ### Loading Pretrained Models
-- You can refer to [load_gaze_model.ipynb](./unigaze/load_gaze_model.ipynb) for instructions on loading the model and integrating it into your own codebase.
+- You can refer to [load_mae.ipynb](./unigaze/load_mae.ipynb) for instructions on loading the model and integrating it into your own codebase.
   - If you want to load the MAE, use `custom_pretrained_path` arguments.
-
 ```python
 ## Loading MAE-backbone only - this will not load the gaze_fc
 mae_h14 = MAE_Gaze(model_type='vit_h_14', custom_pretrained_path='checkpoints/mae_h14/mae_h14_checkpoint-299.pth')

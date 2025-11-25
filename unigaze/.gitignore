@@ -13,6 +13,7 @@ cache/
 
 *.ipynb
 !load_gaze_model.ipynb
+!load_mae.ipynb
 .ipynb_checkpoints
 *.npy
 *.dat
