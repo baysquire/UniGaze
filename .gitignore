@@ -1,4 +1,3 @@
-IMPLEMENTATION_GUIDE.md
-IMPLEMENTATION_SUMMARY.md
-RESEARCH_IMPROVEMENTS_CHECKLIST.md
-CODEBASE_REVIEW.md
+# Temporary test files
+unigaze/test_improvements.py
+unigaze/validate_improvements.py
